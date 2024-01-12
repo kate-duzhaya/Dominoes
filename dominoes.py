@@ -1,12 +1,13 @@
 import random
 from itertools import cycle
+from collections import Counter
 
 
 def get_full_domino_set() -> list:
     return [[x, y] for x in range(0, 7) for y in range(x, 7)]
 
 
-def get_player_dominoes(full_set: list) -> tuple:
+def get_player_dominoes(full_set: list):
     shuffled_set = random.sample(full_set, len(full_set))
     player_set = random.sample(shuffled_set, k=7)
     computer_set = random.sample([x for x in shuffled_set if x not in player_set], k=7)
@@ -14,7 +15,7 @@ def get_player_dominoes(full_set: list) -> tuple:
     return stock_set, computer_set, player_set
 
 
-def get_starting_piece(player_set: list, computer_set: list) -> tuple:
+def get_starting_piece(player_set: list, computer_set: list):
     dominoes = []
     if max(player_set) > max(computer_set):
         dominoes.append(max(player_set))
@@ -59,18 +60,41 @@ def check_if_move_legal(tile_index: int, tile: list) -> bool:
         return True
 
 
+def get_tile_scores() -> list:
+    combined_list = computer_pieces + domino_snake
+    comp_and_snake_nums = [num for tile in combined_list for num in tile]
+    nums_to_count = Counter(comp_and_snake_nums)
+    scores = dict()
+    for tile in computer_pieces:
+        tile_score = 0
+        for num in tile:
+            if num in nums_to_count.elements():
+                tile_score += nums_to_count[num]
+        scores[computer_pieces.index(tile)] = tile_score
+    tile_scores = Counter(scores).most_common()
+    return tile_scores
+
+
 def get_computer_move():
     input()
-    while True:
-        tile_index = random.randrange(-len(computer_pieces), len(computer_pieces))
-        real_index = get_real_index(tile_index)
-        if check_if_move_legal(tile_index, computer_pieces[real_index]):
+    tile_scores = get_tile_scores()
+    tile_side = 0
+    comp_tile_index = 0
+    for tile_score in tile_scores:
+        tile = computer_pieces[tile_score[0]]
+        if check_if_move_legal(-1, tile):
+            tile_side = -1
+            comp_tile_index = tile_score[0]
             break
-    if tile_index == 0:
+        elif check_if_move_legal(1, tile):
+            tile_side = 1
+            comp_tile_index = tile_score[0]
+            break
+    if tile_side == 0:
         skip_a_move(computer_pieces)
     else:
-        removed_tile = computer_pieces.pop(real_index)
-        add_a_tile_to_domino_snake(tile_index, removed_tile)
+        removed_tile = computer_pieces.pop(comp_tile_index)
+        add_a_tile_to_domino_snake(tile_side, removed_tile)
 
 
 def get_player_move():
